@@ -10,8 +10,6 @@
 #define SCR     (WIDTH*HEIGHT)
 #define SCR2    (FULLW*FULLH)
 
-//#define TWO_PI 6.28318530717958647693f
-
   float randomf(float minf, float maxf) {return minf + (rand()%(1UL << 31))*(maxf - minf) / (1UL << 31);} 
   
   uint8_t col[2*SCR2];
