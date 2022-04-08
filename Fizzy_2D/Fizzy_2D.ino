@@ -23,7 +23,7 @@ void rndrule(){
 
   calm = 16 + rand()%233;
   a = randomf(1.0f, 5.5f);
-  for (int k = 0; k < SCR; k++) CellVal[k] =  rand()%256;
+  for (int k = 0; k < SCR; k++) CellVal[k] = randomf(0.0f, 128.0f);
 
 }
 
@@ -64,7 +64,7 @@ void loop() {
       
       CellIndex = (CellIndex+1)%SCR;
 
-      uint8_t coll = a * CellVal[CellIndex];
+      uint8_t coll = ((uint8_t)(a * CellVal[CellIndex])%100)<<2;
       uint16_t image = ST7735_COLOR565(coll, coll, coll);
       col[((4*x)+(4*y)*FULLW)] = (uint8_t)(image >> 8) & 0xFF;
       col[((4*x)+(4*y)*FULLW)+1] = (uint8_t)(image) & 0xFF;
