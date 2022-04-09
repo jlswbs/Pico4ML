@@ -18,9 +18,9 @@ float randomf(float minf, float maxf) {return minf + (rand()%(1UL << 31))*(maxf 
 
   uint8_t color;
   float total, x, r;
-  float a1,b1;
-  float dx,dy;
-  float xd,yd;
+  float a1, b1;
+  float dx, dy;
+  float xd, yd;
   float attractor;
   float MinX;
   float MaxX;
@@ -29,12 +29,12 @@ float randomf(float minf, float maxf) {return minf + (rand()%(1UL << 31))*(maxf 
 void rndrule(){
 
   attractor = 0.0f;
-  MinX = -3.4028235E+38;
-  MaxX = sqrtf(3.4028235E+38) / 8;
-  xd = 1.5f;
-  yd = 1.5f;
-  dx = 1.0f/(WIDTH/3);
-  dy = 1.0f/(HEIGHT/3);
+  MinX = -MAXFLOAT;
+  MaxX = MAXFLOAT;
+  xd = randomf(1.0f, 1.9f);
+  yd = randomf(1.0f, 1.9f);
+  dx = randomf(0.5f, 1.0f)/(WIDTH/3);
+  dy = randomf(0.5f, 1.0f)/(HEIGHT/3);
 
 }
 
@@ -108,7 +108,7 @@ void loop(){
 
       if (color < 128){
         
-        uint8_t coll = 2 * color;
+        uint8_t coll = color<<2;
         uint16_t image = ST7735_COLOR565(coll, coll, coll);
         col[((4*b)+(4*a)*FULLW)] = (uint8_t)(image >> 8) & 0xFF;
         col[((4*b)+(4*a)*FULLW)+1] = (uint8_t)(image) & 0xFF;
@@ -120,6 +120,6 @@ void loop(){
   ST7735_DrawImage(0, 0, FULLW, FULLH, col);
 
   attractor = attractor + 0.001f;
-  if(attractor >= 0.4f) attractor = 0.0f;
+  if(attractor >= 0.5f) attractor = 0.0f;
 
 }
