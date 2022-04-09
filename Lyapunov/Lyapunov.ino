@@ -28,7 +28,7 @@ float randomf(float minf, float maxf) {return minf + (rand()%(1UL << 31))*(maxf 
     
 void rndrule(){
 
-  attractor = 0.0f;//randomf(0.099f, 0.999f);
+  attractor = 0.0f;
   MinX = -3.4028235E+38;
   MaxX = sqrtf(3.4028235E+38) / 8;
   xd = 1.5f;
@@ -120,7 +120,6 @@ void loop(){
   ST7735_DrawImage(0, 0, FULLW, FULLH, col);
 
   attractor = attractor + 0.001f;
-
   if(attractor >= 0.4f) attractor = 0.0f;
 
 }
