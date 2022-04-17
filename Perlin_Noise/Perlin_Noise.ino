@@ -10,14 +10,13 @@
 #define SCR     (WIDTH*HEIGHT)
 #define SCR2    (FULLW*FULLH)
 
-float randomf(float minf, float maxf) {return minf + (rand()%(1UL << 31))*(maxf - minf) / (1UL << 31);}
-
   uint8_t col[2*SCR2];
 
-#define ITER 10
+#define ITER 6
 
-static int SEED = 0;
-float freq = 0.02f;
+  static int SEED = 0;
+  float freq = 0.01f;
+  bool sw = true;
 
 static int hash[] = { 208,34,231,213,32,248,233,56,161,78,24,140,71,48,140,254,245,255,247,247,40,
                      185,248,251,245,28,124,204,204,76,36,1,107,28,234,163,202,224,245,128,167,204,
@@ -73,12 +72,6 @@ float perlin2d(float x, float y, float freq, int depth){
   }
 
   return fin / div;
-} 
-
-void rndrule(){
-
-  freq = randomf(0.029f, 0.399f);
-
 }
 
 static inline void seed_random_from_rosc(){
@@ -110,8 +103,6 @@ void setup() {
 
 void loop(){
 
-  rndrule();
-
   for (int j = 0; j < HEIGHT; j++){
     for (int i = 0; i < WIDTH; i++){
       
@@ -124,4 +115,10 @@ void loop(){
   }
 
   ST7735_DrawImage(0, 0, FULLW, FULLH, col);
+
+  if(sw == true) freq = freq + 0.004f;
+  if(sw == false) freq = freq - 0.004f;
+  if(freq > 0.19f) sw = false;
+  if(freq < 0.01f) sw = true;
+
 }
