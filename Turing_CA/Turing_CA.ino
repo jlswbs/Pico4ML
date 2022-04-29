@@ -13,20 +13,20 @@ float randomf(float minf, float maxf) {return minf + (rand()%(1UL << 31))*(maxf 
 
   uint16_t image;
   bool cells[WIDTH][HEIGHT]; 
-  int innerNeighbor = 2;
-  int outerNeighbor = 4;
+  int innerNeighbor = 3;
+  int outerNeighbor = 6;
   float w;
 
 
 void rndrule(){
 
-  w = randomf(0.24f, 0.77f);
+  w = randomf(0.249f, 0.699f);
 
   for (int y = 0; y < HEIGHT; y++){
     
     for (int x = 0; x < WIDTH; x++){
       
-      if(rand()%10 < 1) cells[x][y] = 1;
+      if(rand()%50 < 1) cells[x][y] = 1;
       else cells[x][y] = 0;
 
     }
