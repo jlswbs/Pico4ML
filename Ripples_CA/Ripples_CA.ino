@@ -69,7 +69,7 @@ void loop(){
 
         } else bj = (ba + bb + bja) / 3.0f;
          
-        uint8_t coll = state[i][j] = bj;
+        uint8_t coll = state[i][j] = constrain(bj, 0, 255);
         image = ST7735_COLOR565(coll, coll, coll);
         col[((2*i)+(2*j)*WIDTH)] = (uint8_t)(image >> 8) & 0xFF;
         col[((2*i)+(2*j)*WIDTH)+1] = (uint8_t)(image) & 0xFF;
