@@ -53,7 +53,7 @@ void loop(){
     x = rand()%WIDTH;
     y = rand()%HEIGHT;
     
-    while(x>1 && x<WIDTH-1 && y>1 && y<HEIGHT-1){
+    while(x>2 && x<WIDTH-2 && y>2 && y<HEIGHT-2){
     
       int move = rand()%4;
       
