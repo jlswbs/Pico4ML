@@ -7,6 +7,8 @@
 #define HEIGHT  160
 #define SCR     (WIDTH*HEIGHT)
 
+#define ITER    35
+
   uint8_t col[2*SCR];
   uint16_t image;
   bool state[WIDTH][HEIGHT];
@@ -103,7 +105,7 @@ void loop(){
       
   }
 
-  for(int i = 0; i < 32; i++) updateScene();
+  for(int i = 0; i < ITER; i++) updateScene();
   
   ST7735_DrawImage(0, 0, WIDTH, HEIGHT, col);
 
