@@ -5,31 +5,32 @@
 
 #define WIDTH   80
 #define HEIGHT  160
-#define SCR     (WIDTH*HEIGHT)
+#define SCR     WIDTH*HEIGHT
 
   uint8_t col[2*SCR];
 
-#define ITER  3000
+#define ITER  2000
+#define NUM   8
 
-  uint16_t image;
   uint16_t grid[WIDTH][HEIGHT]; 
-  int state[8];
+  uint16_t coll[NUM];
+  uint16_t image;
   int t, q;
 
-void rndrule(){
+void rndseed(){
+
+  for (int i = 0; i < NUM; i++) coll[i] = rand();
 
   for (int y = 0; y < HEIGHT; y++){
-    
     for (int x = 0; x < WIDTH; x++){
       
       if(x == 0 || x == 1 || x == WIDTH-2 || x == WIDTH-1 || y == 0 || y == 1 || y == HEIGHT-2 || y == HEIGHT-1) grid[x][y] = 1;
       else grid[x][y] = 0;
 
     }
-
   }
   
-  for (int i = 1; i < 8; i++){
+  for (int i = 1; i < NUM; i++){
     
     int x = 2 * (5 + rand()%(WIDTH/2)-5);
     int y = 2 * (5 + rand()%(HEIGHT/2)-5);
@@ -80,10 +81,10 @@ void nextstep(){
     if(grid[x][y] >= 1000 && grid[x][y] < 2000){
       
       q = (grid[x][y]/100)-10;
-      if(state[q] == 0 && grid[x+2][y] == 0){ grid[x+2][y] = q*100; grid[x+1][y] = q*100; }
-      if(state[q] == 0 && grid[x][y+2] == 0){ grid[x][y+2] = q*100; grid[x][y+1] = q*100; }
-      if(state[q] == 0 && grid[x-2][y] == 0){ grid[x-2][y] = q*100; grid[x-1][y] = q*100; }
-      if(state[q] == 0 && grid[x][y-2] == 0){ grid[x][y-2] = q*100; grid[x][y-1] = q*100; }
+      if(grid[x+2][y] == 0){ grid[x+2][y] = q*100; grid[x+1][y] = q*100; }
+      if(grid[x][y+2] == 0){ grid[x][y+2] = q*100; grid[x][y+1] = q*100; }
+      if(grid[x-2][y] == 0){ grid[x-2][y] = q*100; grid[x-1][y] = q*100; }
+      if(grid[x][y-2] == 0){ grid[x][y-2] = q*100; grid[x][y-1] = q*100; }
     
     }
     
@@ -122,7 +123,7 @@ void setup() {
   ST7735_Init();
   ST7735_FillScreen(ST7735_BLACK);
 
-  rndrule();
+  rndseed();
  
 }
 
@@ -130,27 +131,17 @@ void loop(){
 
   nextstep();
 
-  memset(col,0,sizeof(col));
-
-  for (int y = 0; y < HEIGHT; y++){
-    
+  for (int y = 0; y < HEIGHT; y++){   
     for (int x = 0; x < WIDTH; x++){
     
-      if(grid[x][y] == 1) image = ST7735_COLOR565(0,0,0);
       if(grid[x][y] >= 100 && grid[x][y] < 1000){
-        q = grid[x][y]/100;
-        if(q == 1) image = ST7735_COLOR565(0,0,255);
-        if(q == 2) image = ST7735_COLOR565(0,255,0);
-        if(q == 3) image = ST7735_COLOR565(0,255,255);
-        if(q == 4) image = ST7735_COLOR565(255,0,0);
-        if(q == 5) image = ST7735_COLOR565(255,0,255);
-        if(q == 6) image = ST7735_COLOR565(255,255,0);
-        if(q == 7) image = ST7735_COLOR565(255,255,255);
+        q = (grid[x][y]/100)%NUM;
+        image = coll[q];    
+      } else image = ST7735_BLACK;
       
-        col[((2*x)+(2*y)*WIDTH)] = (uint8_t)(image >> 8) & 0xFF;
-        col[((2*x)+(2*y)*WIDTH)+1] = (uint8_t)(image) & 0xFF;
+      col[((2*x)+(2*y)*WIDTH)] = (uint8_t)(image >> 8) & 0xFF;
+      col[((2*x)+(2*y)*WIDTH)+1] = (uint8_t)(image) & 0xFF;
       
-      }
     }
   }
 
