@@ -25,22 +25,11 @@
   float prange[SCR][SCL];
   float pvar[SCR][SCL];
     
-void rndrule() {
+void rndrule(){
 
   lim = 96 + rand()%96;
   dirs = 6 + rand()%7;
   patt = rand()%3;
-  
-  for(int j=0; j<SCL; j++){
-  
-    for(int i=0; i<SCR; i++) {
-    
-      pmedian[i][j] = 0;
-      prange[i][j] = 0;
-      pvar[i][j] = 0;
-  
-    }
-  }
   
   for(int i=0; i<SCR; i++) pat[i] = randomf(0, 255.0f);
 
@@ -64,7 +53,7 @@ void rndrule() {
   srand(random);
 }
 
-void setup() {
+void setup(){
   
   seed_random_from_rosc();
 
@@ -75,14 +64,13 @@ void setup() {
   
 }
 
-void loop() {
+void loop(){
 
   float R = randomf(0, TWO_PI);
-  memcpy(pnew, pat, 4 * SCR);
+  memcpy(pnew, pat, 4*SCR);
   
   for(int j=0; j<SCL; j++){
-  
-    for(int i=0; i<SCR; i++) {
+    for(int i=0; i<SCR; i++){
     
       pmedian[i][j] = 0;
       prange[i][j] = 0;
@@ -91,15 +79,15 @@ void loop() {
     }
   }
       
-  for(int i=0; i<SCL; i++) {
+  for(int i=0; i<SCL; i++){
 
     float d = (2<<i);
 
-    for(int j=0; j<dirs; j++) {
+    for(int j=0; j<dirs; j++){
           
       float dir = j * TWO_PI / dirs + R;
-      int dx = (d * cos(dir));
-      int dy = (d * sin(dir));
+      int dx = (d * cosf(dir));
+      int dy = (d * sinf(dir));
            
       for(int l=0; l<SCR; l++) {
         int x1 = l%WIDTH + dx, y1 = l/WIDTH + dy;
@@ -111,8 +99,8 @@ void loop() {
 
     for(int j=0; j<dirs; j++) {
       float dir = j * TWO_PI / dirs + R;
-      int dx = (d * cos(dir));
-      int dy = (d * sin(dir));
+      int dx = (d * cosf(dir));
+      int dy = (d * sinf(dir));
     
       for(int l=0; l<SCR; l++) {
         int x1 = l%WIDTH + dx, y1 = l/WIDTH + dy;
