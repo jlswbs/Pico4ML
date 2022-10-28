@@ -27,7 +27,7 @@ void rndrule(){
     }
   }
   
-  for (int i = 0; i < DROPS; i++) v[rand()%WIDTH][rand()%HEIGHT] = randomf(0.0f, TWO_PI);
+  for (int i = 0; i < DROPS; i++) v[1+rand()%(WIDTH-2)][1+rand()%(HEIGHT-2)] = randomf(0.0f, TWO_PI);
 
 }
 
