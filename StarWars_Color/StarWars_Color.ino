@@ -1,4 +1,4 @@
-// Star-Wars cellular automata //
+// Star-Wars cellular automata - color centered //
 
 #include "hardware/structs/rosc.h"
 #include "st7735.h"
@@ -18,16 +18,19 @@
   uint8_t next[SCR];
   uint8_t alive_counts[SCR];
   uint8_t swap[SCR];
+  uint8_t gridpix;
     
 void rndrule(){
 
   memset(col, 0, sizeof(col));
 
-  for(int y = 0; y < HEIGHT; y++){
-    
-    for(int x = 0; x < WIDTH; x++) current[x+y*WIDTH] = (rand()%100) < 20 ? ALIVE : DEAD;
+  gridpix = rand() % (WIDTH/2);
 
-  }
+  for (int y = (HEIGHT/2)-gridpix; y < (HEIGHT/2)+gridpix; y=y+2) {
+  
+    for (int x = (WIDTH/2)-gridpix; x < (WIDTH/2)+gridpix; x=x+2) current[x+y*WIDTH] = ALIVE;
+ 
+  } 
 
 }
 
@@ -77,7 +80,7 @@ int wrap(int v, int m){
 
 }
 
-void draw_type(int min_alive, int max_alive, uint16_t color){  
+void draw_type(int min_alive, int max_alive, uint16_t color){
 
   uint16_t coll;
 
@@ -88,10 +91,10 @@ void draw_type(int min_alive, int max_alive, uint16_t color){
       int self = current[x+y*WIDTH];
       if (self == DEAD) continue;
       int alive = alive_counts[x+y*WIDTH];
-      if (alive < min_alive || alive > max_alive) continue; 
+      if (alive < min_alive || alive > max_alive) continue;
       if (self == ALIVE) coll = color;
       else if (self == DEATH_1) coll = color<<2;
-      else if (self == DEATH_2) coll = ST7735_BLACK;
+      else if (self == DEATH_2) coll = color<<1;
       
       col[((2*x)+(2*y)*WIDTH)] = (uint8_t)(coll >> 8) & 0xFF;
       col[((2*x)+(2*y)*WIDTH)+1] = (uint8_t)(coll) & 0xFF;
@@ -133,9 +136,9 @@ void loop(){
 
   step();
   
-  draw_type(50, 100, ST7735_RED);
-  draw_type(2, 49, ST7735_BLUE);
-  draw_type(0, 1, ST7735_WHITE);
+  draw_type(50, 100, rand());
+  draw_type(2, 49, rand());
+  draw_type(0, 1, rand());
   
   ST7735_DrawImage(0, 0, WIDTH, HEIGHT, col);
 
