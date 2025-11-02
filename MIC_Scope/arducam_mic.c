@@ -17,7 +17,7 @@ mic_i2s_config_t config= {
   .data_buf_size = 256,
   .pio_sm = 0,
   .dma_channel = 0,
-  .sample_freq = 192000,
+  .sample_freq = 96000,
 };
 
 void update_pio_frequency(mic_i2s_config_t* config) {
