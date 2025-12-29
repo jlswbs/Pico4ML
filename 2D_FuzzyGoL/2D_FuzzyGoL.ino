@@ -1,4 +1,4 @@
-// 2D memristor base GoL cellular automata // 
+// 2D fuzzy-logic base GoL cellular automata // 
 
 #include "hardware/structs/rosc.h"
 #include "st7735_lcd.pio.h"
@@ -18,35 +18,20 @@ uint offset = pio_add_program(pio, &st7735_lcd_program);
 #define SCR     (WIDTH * HEIGHT)
 #define SERIAL_CLK_DIV 1.f
 
-static const uint8_t st7735_init_seq[] = {
-  1, 20, 0x01,
-  1, 10, 0x11,
-  2, 2, 0x3A, 0x05,
-  2, 0, 0x36, 0x08,
-  5, 0, 0x2A, 0x00, 0x18, 0x00, 0x67,
-  5, 0, 0x2B, 0x00, 0x00, 0x00, 0x9F,
-  1, 2, 0x20,
-  1, 2, 0x13,
-  1, 2, 0x29,
-  0
-};
-
 #define Q16_ONE   65535u
-#define TO_Q16(x) ((uint16_t)((x) * 65535.0f + 0.5f))
+#define TO_Q16(x) ((uint16_t)((x) * 65535.0f))
 #define MUL_Q16(a,b) ((uint32_t)(a) * (uint32_t)(b) >> 16)
 
+#define FUZZY_NEIGHBOR_GAIN     TO_Q16(0.60f)
+#define FUZZY_SELF_DAMP         TO_Q16(0.62f)
+#define FUZZY_EXCITE_UP         TO_Q16(0.05f)
+#define FUZZY_EXCITE_DECAY      TO_Q16(0.97f)
+#define FUZZY_EXCITE_INFLUENCE  TO_Q16(0.05f)
+
 typedef struct {
-    uint16_t energy;
-    uint16_t memory_alive;
+    uint16_t mu_alive;
+    uint16_t excite;
 } Cell;
-
-#define CELL_ALIVE(c)   ((c).memory_alive & 0x8000)
-#define CELL_MEMORY(c)  ((c).memory_alive & 0x7FFF)
-
-#define SET_ALIVE(c)    ((c).memory_alive |= 0x8000)
-#define CLEAR_ALIVE(c)  ((c).memory_alive &= 0x7FFF)
-
-#define SET_MEMORY(c,m) ((c).memory_alive = ((c).memory_alive & 0x8000) | (m))
 
 Cell grid[SCR];
 Cell new_grid[SCR];
@@ -70,15 +55,6 @@ static inline void lcd_write_cmd(PIO pio, uint sm, const uint8_t *cmd, size_t co
     lcd_set_dc_cs(1,1);
 }
 
-static inline void lcd_init(PIO pio, uint sm, const uint8_t *init_seq) {
-    const uint8_t *cmd = init_seq;
-    while (*cmd) {
-        lcd_write_cmd(pio, sm, cmd+2, *cmd);
-        sleep_ms(*(cmd+1)*5);
-        cmd += *cmd + 2;
-    }
-}
-
 static inline void st7735_start_pixels(PIO pio, uint sm) {
     uint8_t cmd = 0x2C;
     lcd_write_cmd(pio, sm, &cmd, 1);
@@ -96,8 +72,8 @@ static inline void seed_random_from_rosc() {
 }
 
 static inline uint16_t cell_to_color(Cell *c) {
-    uint16_t r = c->energy;
-    uint16_t g = c->memory_alive;
+    uint16_t r = c->excite;
+    uint16_t g = c->mu_alive;
     uint16_t b = Q16_ONE - g;
 
     return ((r >> 11) << 11) |
@@ -107,56 +83,37 @@ static inline uint16_t cell_to_color(Cell *c) {
 
 void update_automaton() {
     for (int y=0;y<HEIGHT;y++) {
-        int yu = (y+HEIGHT-1)%HEIGHT;
-        int yd = (y+1)%HEIGHT;
-
+        int yu=(y+HEIGHT-1)%HEIGHT, yd=(y+1)%HEIGHT;
         for (int x=0;x<WIDTH;x++) {
-            int xl=(x+WIDTH-1)%WIDTH;
-            int xr=(x+1)%WIDTH;
+            int xl=(x+WIDTH-1)%WIDTH, xr=(x+1)%WIDTH;
             int idx = IDX(x,y);
 
-            int ln = 0;
-            uint32_t sumE = 0;
-
+            uint32_t sum_mu = 0;
             int n[8] = {
                 IDX(xl,yu), IDX(x,yu), IDX(xr,yu),
                 IDX(xl,y),            IDX(xr,y),
                 IDX(xl,yd), IDX(x,yd), IDX(xr,yd)
             };
 
-            for (int i=0;i<8;i++) {
-                if (CELL_ALIVE(grid[n[i]])) {
-                    ln++;
-                    sumE += grid[n[i]].energy;
-                }
-            }
+            for (int i=0;i<8;i++) sum_mu += grid[n[i]].mu_alive;
 
-            uint16_t avgE = ln ? (sumE / ln) : 0;
+            uint16_t avg_mu = sum_mu >> 3;
 
             Cell cur = grid[idx];
             Cell nxt = cur;
 
-            bool alive = CELL_ALIVE(cur);
-            bool next_alive = alive ? (ln==2||ln==3) : (ln==3);
+            nxt.excite = MUL_Q16(cur.excite, FUZZY_EXCITE_DECAY)
+                       + MUL_Q16(cur.mu_alive, FUZZY_EXCITE_UP);
 
-            if (alive && cur.energy > TO_Q16(0.7f) && ln>=1 && ln<=4) next_alive=true;
-            if (alive && cur.energy < TO_Q16(0.3f) && (ln<2||ln>3)) next_alive=false;
-            if (!alive && avgE > TO_Q16(0.6f) && ln>=2 && ln<=3) next_alive=true;
+            int32_t delta =
+                MUL_Q16(avg_mu, FUZZY_NEIGHBOR_GAIN) -
+                MUL_Q16(cur.mu_alive, FUZZY_SELF_DAMP);
 
-            if (next_alive) SET_ALIVE(nxt); else CLEAR_ALIVE(nxt);
+            nxt.mu_alive = cur.mu_alive + delta;
+            nxt.mu_alive += MUL_Q16(nxt.excite, FUZZY_EXCITE_INFLUENCE);
 
-            if (next_alive) {
-                nxt.energy = MUL_Q16(cur.energy, TO_Q16(0.85f)) + TO_Q16(0.15f);
-                uint16_t mem = CELL_MEMORY(cur) + TO_Q16(0.01f);
-                if (mem > 0x7FFF) mem = 0x7FFF;
-                SET_MEMORY(nxt, mem);
-            } else {
-                nxt.energy = MUL_Q16(cur.energy, TO_Q16(0.7f));
-                SET_MEMORY(nxt, MUL_Q16(CELL_MEMORY(cur), TO_Q16(0.95f)));
-            }
-
-            nxt.energy = MUL_Q16(nxt.energy, TO_Q16(0.9f)) + MUL_Q16(avgE, TO_Q16(0.1f));
-            if (nxt.energy > Q16_ONE) nxt.energy = Q16_ONE;
+            if ((int32_t)nxt.mu_alive < 0) nxt.mu_alive = 0;
+            if (nxt.mu_alive > Q16_ONE) nxt.mu_alive = Q16_ONE;
 
             new_grid[idx] = nxt;
         }
@@ -166,9 +123,8 @@ void update_automaton() {
 
 void init_automaton() {
     for (int i=0;i<SCR;i++) {
-        grid[i].energy = rand() & 0xFFFF;
-        grid[i].memory_alive = (rand()&0x7FFF);
-        if ((rand()%100) < 25) SET_ALIVE(grid[i]);
+        grid[i].mu_alive = rand() & 0xFFFF;
+        grid[i].excite   = rand() & 0x7FFF;
     }
 }
 
@@ -184,8 +140,6 @@ void setup() {
     gpio_set_dir(PIN_RESET, GPIO_OUT);
     gpio_put(PIN_CS,1);
     gpio_put(PIN_RESET,1);
-
-    lcd_init(pio, sm, st7735_init_seq);
 
     seed_random_from_rosc();
 
